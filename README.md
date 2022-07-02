@@ -1,5 +1,5 @@
 # Controller
 BAT in C++
-# Yeah!
-  ohh!
+# Instruction
+  controller.exe
   This is a project which targets to deal with a large amount of files.
