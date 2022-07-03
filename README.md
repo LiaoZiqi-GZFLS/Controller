@@ -1,8 +1,8 @@
 # Controller
 BAT in C++
 # Instruction
-  controller.exe
-  This is a project which targets to deal with a large amount of files.
+1.controller.exe
+2.This is a project which targets to deal with a large amount of files.
 # Functions
 + findfile: 支持用通配符格式搜索子文件夹
 + filelist: 输出finffile结果
