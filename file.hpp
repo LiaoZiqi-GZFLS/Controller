@@ -2,34 +2,186 @@
 #include <vector>
 #include <string>
 #include <io.h>
+#include <fstream>
 using namespace std;
-struct _file{
-	long name;
-	long path;
+struct _file;
+struct _list{
+	_file *addr;
+	_list *front;
+	_list *next;
 };
-inline void getfileall(string path,vector<string> &dirpath){
-	struct _finddata_t fileinfo;    //_finddata_tÊÇÒ»¸ö½á¹¹Ìå£¬ÒªÓÃµ½#include <io.h>Í·ÎÄ¼ş£»
+struct _file{
+	string name;
+	string path;
+	int num;
+	_list *son;
+	_file *father;
+};
+string rename(string &path){
+	if(path[path.length()-1]=='\\'){
+		path[path.length()-1]=path[path.length()-2]='\0';
+	}
+	char ch='\\';
+	char str[path.length()];
+	strcpy(str,path.data());
+	int t = strlen(str);
+	char *pch = strrchr(str,ch);
+	if(pch==NULL) return path;
+	int h = pch - str;
+	string _str;
+	for(int i=h+1;i<t;i++){
+		_str+=path[i];
+	}
+	return _str;
+}
+inline void getfileall(string path,vector<string> &dirpath,_list *father,_file *f){
+	struct _finddata_t fileinfo;    //_finddata_tæ˜¯ä¸€ä¸ªç»“æ„ä½“ï¼Œè¦ç”¨åˆ°#include <io.h>å¤´æ–‡ä»¶ï¼›
+	struct _file *h=NULL,*q=NULL,*o=NULL;
+	struct _list *p=NULL,*k=NULL;
+	h = new _file;
+	h->path = path;
+	h->name = rename(path);
+	h->num = 0;
+	father->addr = h;
 	long ld;
 	if ((ld = _findfirst((path+"\\*").c_str(), &fileinfo)) != -1l){
 		do{
-			if ((fileinfo.attrib&_A_SUBDIR)){  //Èç¹ûÊÇÎÄ¼ş¼Ğ£»
-				if (strcmp(fileinfo.name, ".")!=0 && strcmp(fileinfo.name, "..")!=0){  //Èç¹ûÎÄ¼şÃû²»ÊÇ.»òÕß..Ôòµİ¹é»ñÈ¡×ÓÎÄ¼şÖĞµÄÎÄ¼ş£»
-					getfileall(path +"\\"+ fileinfo.name, dirpath);  //µİ¹é×ÓÎÄ¼ş¼Ğ£»
+			h->num++;
+			h->father = f;
+			if ((fileinfo.attrib&_A_SUBDIR)){  //å¦‚æœæ˜¯æ–‡ä»¶å¤¹ï¼›
+				if (strcmp(fileinfo.name, ".")!=0 && strcmp(fileinfo.name, "..")!=0){  //å¦‚æœæ–‡ä»¶åä¸æ˜¯.æˆ–è€…..åˆ™é€’å½’è·å–å­æ–‡ä»¶ä¸­çš„æ–‡ä»¶ï¼›
+					p = new _list;
+					if(h->num==0){
+						h->son = p;
+						p->front = NULL;
+						//cout<<"!"<<k->addr->path<<endl;
+					}else{
+						p->front = k;
+						//cout<<"!!"<<k->addr->path<<endl;
+						k->next = p;
+					}
+					p->next = NULL;
+					k = p;
+					getfileall(path +"\\"+ fileinfo.name, dirpath,p,h);  //é€’å½’å­æ–‡ä»¶å¤¹ï¼›
+				}else{
+					h->num--;
 				}
 			}
-			else   //Èç¹ûÊÇÎÄ¼ş£»
+			else   //å¦‚æœæ˜¯æ–‡ä»¶ï¼›
 			{
 				dirpath.push_back(path + "\\" + fileinfo.name);
-				cout << path+"\\"+fileinfo.name << endl;//Êä³ö 
+				cout << path+"\\"+fileinfo.name << endl;//è¾“å‡º 
+				q = new _file;
+				q->father = h;
+				q->name = fileinfo.name;
+				q->path = path+"\\"+fileinfo.name;
+				q->son = NULL;
+				q->father = h;
+				q->num = 0;
+				p = new _list;
+				p->addr = q;
+				if(h->num==0){
+					h->son = p;
+					p->front = NULL;
+				}else{
+					p->front = k;
+					//k->next = p;
+				}
+				p->next = NULL;
+				k = p;
 			}
 		} while (_findnext(ld, &fileinfo) == 0);
 		_findclose(ld);
 	}
+	//cout<<f->num<<endl;
+}
+
+inline void delfileall(_file *f){
+	//_file *p=NULL,*q=NULL;
+	_list *k=NULL;
+	if(f->num>=0){
+		k = f->son;
+		for(int i=1;i<=f->num;i++){
+			delfileall(k->addr);
+			k = k->next;
+		}
+	}
+	delete f->son;
+	delete f;
+}
+
+string en(string _name){
+	char ch='.';
+	char str[_name.length()];
+	strcpy(str,_name.data());
+	int t = strlen(str);
+	char *pch = strrchr(str,ch);
+	if(pch==NULL) return "\0";
+	int h = pch - str;
+	string _str;
+	for(int i=h+1;i<t;i++){
+		_str+=_name[i];
+	}
+	return _str;
+}
+string na(string _name){
+	char ch='.';
+	char str[_name.length()];
+	strcpy(str,_name.data());
+	int t = strlen(str);
+	char *pch = strrchr(str,ch);
+	if(pch==NULL) return "\0";
+	int h = pch - str;
+	string _str;
+	for(int i=0;i<h-1;i++){
+		_str+=_name[i];
+	}
+	return _str;
+}
+
+void jun(string path,string _name,string ob,string op){
+	if(ob=="*"){
+		if(op=="print"){
+			cout<<path<<endl;
+		}
+	}
+	if(na(ob)=="*"){
+		if(en(_name)==en(ob)){
+			if(op=="del"){
+				string str="del "+path;
+				char str2[str.length()];
+				strcpy(str2,str.data());
+				system(str2);
+			}
+			if(op=="search"){
+				string s;
+				cin>>s;
+				s = "findstr " + s + " " + path;
+				char str[s.length()];
+				strcpy(str,s.data());
+				system(str);
+			}
+		}
+	}
+	return;
+}
+
+inline void searchfileall(_file *f,string ob,string op){
+	_list *k=NULL;
+	if(f->num>0){
+		k = f->son;
+		for(int i=1;i<=f->num;i++){
+			searchfileall(k->addr,ob,op);
+			k = k->next;
+		}
+	}
+	cout<<f->num<<endl;
+	jun(f->path,f->name,ob,op);
 }
 
 /*int main(){
-	string  path = "C:\\Users\\Student\\Desktop";   //ÓÉÓÚ\ÊÇ×ªÒå×Ö·ûµÄÆğÊ¼×Ö·û£¬Â·¾¶ÖĞÒªÓÃ\\£¬Ò²¿ÉÒÔÖ»ÓÃÒ»¸ö/;
-	vector<string> dirpath;     //±£´æÎÄ¼şµÄÂ·¾¶£»
+	string  path = "C:\\Users\\Student\\Desktop";   //ç”±äº\æ˜¯è½¬ä¹‰å­—ç¬¦çš„èµ·å§‹å­—ç¬¦ï¼Œè·¯å¾„ä¸­è¦ç”¨\\ï¼Œä¹Ÿå¯ä»¥åªç”¨ä¸€ä¸ª/;
+	vector<string> dirpath;     //ä¿å­˜æ–‡ä»¶çš„è·¯å¾„ï¼›
 	getfileall(path, dirpath);  
 	return 0;
 }*/
