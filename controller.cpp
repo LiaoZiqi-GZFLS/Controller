@@ -4,6 +4,9 @@
 #include "findfile.h"
 #include "file.hpp"
 using namespace std;
+_list *head;
+_file *h;
+bool l=0;
 void strre(char (&ch)[50], string &str2){
 	int i=0;
 	while(str2[i]!='\0'){
@@ -39,9 +42,9 @@ int main (){
    	s=command;
    	//strre2(command,s);
    	if(s=="help"){
-   		cout<<"help:exit/cmd/databox/findfile/filelist/file"<<endl;
+   		cout<<"help:exit/cmd/databox/findfile/filelist/file/file+"<<endl;
    		cout<<"controller is made by GZFLS Lazybones LZQ"<<endl;
-   		cout<<"Any copy or use without telling the author is illegal."<<endl;
+   		cout<<"Any commercial use without telling the author is illegal."<<endl;
    		continue;
 	   }
 	if(s=="exit"){
@@ -78,16 +81,46 @@ int main (){
 			}
 			cout<<endl;
 		}
-		cout<<"�ļ���Ŀ:"<<num<<endl;
+		cout<<"文件数目:"<<num<<endl;
 		continue;
 	}
 	if(s=="file"){
 		//string  path = "C:\\Users\\Student\\Desktop";
+		if(l==1){
+			cout<<"路径树已存在，是否覆盖？(Y/N)"<<endl;
+			string path;
+			cin>>path;
+			if(path!="Y") continue;
+			//清除树
+			delfileall(h);
+		}
+		//创建树 
+		l = 1;
 		string path;
 		cout<<"input(path):"<<endl; 
 		cin>>path;
+		h = new _file;
+		h->father = NULL;
+		h->num = 0;
+		h->name = rename(path);
+		h->path = path;
+		head = new _list;
+		h->son = head;
+		head->addr = h;
+		head->front = NULL;
+		head->next = NULL;
 		vector<string> dirpath;
-		getfileall(path, dirpath);  
+		getfileall(path, dirpath,head,h); 
+		continue;
+	}
+	if(s=="file+"){
+		cout<<"input(objective):"<<endl;
+		string objective;
+		cin>>objective;
+		cout<<"inout(operation):"<<endl;
+		string operation;
+		cin>>operation;
+		searchfileall(h,objective,operation);
 		continue;
 	}
 	//default
