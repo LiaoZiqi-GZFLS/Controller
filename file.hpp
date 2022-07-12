@@ -1,22 +1,50 @@
-#include <iostream>
-#include <vector>
-#include <string>
-#include <io.h>
-#include <fstream>
+#include<iostream>
+#include<vector>
+#include<string.h>
+#include<io.h>
+//#include<fstream>
 using namespace std;
-struct _file;
-struct _list{
-	_file *addr;
-	_list *front;
-	_list *next;
-};
 struct _file{
 	string name;
 	string path;
 	int num;
-	_list *son;
-	_file *father;
+	_file *up;
+	_file *down;
+	_file *left;
+	_file *right;
 };
+void initfile(_file *ob){
+	ob->up =NULL;
+	ob->down = NULL;
+	ob->left = NULL;
+	ob->right = NULL;
+	ob->num = 0;
+	ob->path = "\0";
+	ob->name = "\0"; 
+	return;
+}
+void delfileall(_file *ob){
+	if(ob==NULL) return;
+	//cout<<"free: "<<ob->path<<endl;
+	if(ob->down!=NULL){
+		delfileall(ob->down);
+	}
+	if(ob->right!=NULL){
+		delfileall(ob->right);
+	}
+	delete ob;
+	return;
+}
+void printfileall(_file *ob){
+	cout<<ob->path<<endl;
+	if(ob->down!=NULL){
+		printfileall(ob->down);
+	}
+	if(ob->right!=NULL){
+		printfileall(ob->right);
+	}
+	return;
+}
 string rename(string &path){
 	if(path[path.length()-1]=='\\'){
 		path[path.length()-1]=path[path.length()-2]='\0';
@@ -34,83 +62,25 @@ string rename(string &path){
 	}
 	return _str;
 }
-inline void getfileall(string path,vector<string> &dirpath,_list *father,_file *f){
-	struct _finddata_t fileinfo;    //_finddata_t是一个结构体，要用到#include <io.h>头文件；
-	struct _file *h=NULL,*q=NULL,*o=NULL;
-	struct _list *p=NULL,*k=NULL;
-	h = new _file;
-	h->path = path;
-	h->name = rename(path);
-	h->num = 0;
-	father->addr = h;
-	long ld;
-	if ((ld = _findfirst((path+"\\*").c_str(), &fileinfo)) != -1l){
-		do{
-			h->num++;
-			h->father = f;
-			if ((fileinfo.attrib&_A_SUBDIR)){  //如果是文件夹；
-				if (strcmp(fileinfo.name, ".")!=0 && strcmp(fileinfo.name, "..")!=0){  //如果文件名不是.或者..则递归获取子文件中的文件；
-					p = new _list;
-					if(h->num==0){
-						h->son = p;
-						p->front = NULL;
-						//cout<<"!"<<k->addr->path<<endl;
-					}else{
-						p->front = k;
-						//cout<<"!!"<<k->addr->path<<endl;
-						k->next = p;
-					}
-					p->next = NULL;
-					k = p;
-					getfileall(path +"\\"+ fileinfo.name, dirpath,p,h);  //递归子文件夹；
-				}else{
-					h->num--;
-				}
-			}
-			else   //如果是文件；
-			{
-				dirpath.push_back(path + "\\" + fileinfo.name);
-				cout << path+"\\"+fileinfo.name << endl;//输出 
-				q = new _file;
-				q->father = h;
-				q->name = fileinfo.name;
-				q->path = path+"\\"+fileinfo.name;
-				q->son = NULL;
-				q->father = h;
-				q->num = 0;
-				p = new _list;
-				p->addr = q;
-				if(h->num==0){
-					h->son = p;
-					p->front = NULL;
-				}else{
-					p->front = k;
-					//k->next = p;
-				}
-				p->next = NULL;
-				k = p;
-			}
-		} while (_findnext(ld, &fileinfo) == 0);
-		_findclose(ld);
+string repath(string &path){
+	if(path[path.length()-1]=='\\'){
+		path[path.length()-1]=path[path.length()-2]='\0';
 	}
-	//cout<<f->num<<endl;
-}
-
-inline void delfileall(_file *f){
-	//_file *p=NULL,*q=NULL;
-	_list *k=NULL;
-	if(f->num>=0){
-		k = f->son;
-		for(int i=1;i<=f->num;i++){
-			delfileall(k->addr);
-			k = k->next;
-		}
+	char ch='\\';
+	char str[path.length()];
+	strcpy(str,path.data());
+	int t = strlen(str);
+	char *pch = strrchr(str,ch);
+	if(pch==NULL) return "\0";
+	int h = pch - str;
+	string _str;
+	for(int i=0;i<h;i++){
+		_str+=path[i];
 	}
-	delete f->son;
-	delete f;
+	return _str;
 }
-
-string en(string _name){
+string af(string _name){
+	_name = rename(_name);
 	char ch='.';
 	char str[_name.length()];
 	strcpy(str,_name.data());
@@ -124,7 +94,8 @@ string en(string _name){
 	}
 	return _str;
 }
-string na(string _name){
+string fr(string _name){
+	_name = rename(_name);
 	char ch='.';
 	char str[_name.length()];
 	strcpy(str,_name.data());
@@ -133,55 +104,160 @@ string na(string _name){
 	if(pch==NULL) return "\0";
 	int h = pch - str;
 	string _str;
-	for(int i=0;i<h-1;i++){
+	for(int i=0;i<h;i++){
 		_str+=_name[i];
 	}
 	return _str;
 }
-
-void jun(string path,string _name,string ob,string op){
-	if(ob=="*"){
-		if(op=="print"){
-			cout<<path<<endl;
+bool jun(string _name, string ob){
+	bool j=0,k=0,l=0;
+	if(ob=="*") return 1;
+	if(repath(ob)=="\0"){
+		j=1;
+	}else{
+		if(repath(_name)==repath(ob)){
+			j=1;
 		}
 	}
-	if(na(ob)=="*"){
-		if(en(_name)==en(ob)){
-			if(op=="del"){
-				string str="del "+path;
-				char str2[str.length()];
-				strcpy(str2,str.data());
-				system(str2);
-			}
-			if(op=="search"){
-				string s;
-				cin>>s;
-				s = "findstr " + s + " " + path;
-				char str[s.length()];
-				strcpy(str,s.data());
-				system(str);
-			}
+	if(rename(ob)=="*") return j;
+	if(rename(ob)==rename(_name)) return j;
+	if(fr(ob)=="*"){
+		k=1;
+	}else{
+		if(fr(_name)==fr(ob)){
+			k=1;
 		}
+	}
+	if(af(ob)=="*"){
+		l=1;
+	}else{
+		if(af(_name)==af(ob)){
+			l=1;
+		}
+	}
+	return j&&k&&l;
+}
+void strre(char (&ch)[50], string &str2){
+	int i=0;
+	while(str2[i]!='\0'){
+		ch[i]=str2[i];
+		i++;
+		if(i>=50) return;
 	}
 	return;
 }
-
-inline void searchfileall(_file *f,string ob,string op){
-	_list *k=NULL;
-	if(f->num>0){
-		k = f->son;
-		for(int i=1;i<=f->num;i++){
-			searchfileall(k->addr,ob,op);
-			k = k->next;
-		}
+void strclear(char (&ch)[50]){
+	for(int i=0;i<50;i++){
+		ch[i]='\0';
 	}
-	cout<<f->num<<endl;
-	jun(f->path,f->name,ob,op);
+	return;
+}
+void oper(string path, string op){
+    char command[50];
+    string s;
+	strclear(command);
+	if(op=="list"){
+		cout<<path<<endl;
+		strclear(command);
+	}
+	if(op=="type"){
+		s="type "+path;
+		strcpy(command,s.data());
+	}
+	if(op=="del"){
+		s="del "+path;
+		strcpy(command,s.data());
+	}
+	if(op=="print"){
+		s="print "+path;
+		strcpy(command,s.data());
+	}
+	if(op=="lookfor"){
+		string str;
+		cout<<"input(str):"<<endl;
+		cin>>str;
+		s="type "+path+" | findstr "+str;
+		strcpy(command,s.data());
+		//strcpy(command,s.data());
+		//ifstream in("temp.txt");
+		//ofstream out("temp.txt");
+	}
+	system(command);
+	return;
+}
+void searchfileall(_file *f, string ob,string op){
+	//cout<<"search: "<<f->path<<endl;
+	if(f->down!=NULL){
+		searchfileall(f->down, ob, op);
+	}
+	if(f->right!=NULL){
+		searchfileall(f->right, ob, op);
+	}
+	if(jun(f->path,ob)){
+		oper(f->path,op);
+	}
+	return;
+}
+inline void getfileall(string path,vector<string> &dirpath,_file *up,_file *left){
+	struct _finddata_t fileinfo;    //_finddata_t是一个结构体，要用到#include <io.h>头文件；
+	long ld;
+	_file *p=NULL,*q=NULL,*k=NULL;
+	p = new _file;
+	p->name = rename(path);
+	p->path = path;
+	p->left = left;
+	p->right = NULL;
+	p->up = up;
+	p->down = NULL;
+	p->num = 0;
+	if(up!=NULL&&up->down==NULL){
+		up->down = p;
+	}
+	if(left!=NULL){
+		left->right = p;
+	}
+	if ((ld = _findfirst((path+"\\*").c_str(), &fileinfo)) != -1l){
+		do{
+			p->num+=1;
+			if ((fileinfo.attrib&_A_SUBDIR)){  //如果是文件夹；
+				if (strcmp(fileinfo.name, ".")!=0 && strcmp(fileinfo.name, "..")!=0){  //如果文件名不是.或者..则递归获取子文件中的文件；
+					getfileall(path +"\\"+ fileinfo.name, dirpath, p, k);  //递归子文件夹；
+					if(k!=NULL){
+						k = k->right;
+					}else{
+						k = p->down;
+					}
+				}else{
+					p->num-=1;
+				}
+			}
+			else   //如果是文件；
+			{
+				dirpath.push_back(path + "\\" + fileinfo.name);
+				cout << path+"\\"+fileinfo.name << endl;//输出 
+				q = new _file;
+				q->name = fileinfo.name;
+				q->path = path+"\\"+fileinfo.name;
+				q->up = p;
+				q->left = k;
+				q->down = NULL;
+				q->right = NULL;
+				if(p!=NULL&&p->down==NULL){
+					p->down = q;
+				}
+				if(k!=NULL){
+					k->right = q;
+				}
+				k = q;
+			}
+		} while (_findnext(ld, &fileinfo) == 0);
+		_findclose(ld);
+	}
 }
 
 /*int main(){
 	string  path = "C:\\Users\\Student\\Desktop";   //由于\是转义字符的起始字符，路径中要用\\，也可以只用一个/;
 	vector<string> dirpath;     //保存文件的路径；
-	getfileall(path, dirpath);  
+	getfileall(path, dirpath ,NULL,NULL);  
 	return 0;
 }*/
