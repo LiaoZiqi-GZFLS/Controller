@@ -1,34 +1,14 @@
 #include<iostream>
-#include <string.h>
+#include<string.h>
+#include<windows.h>
 #include "databox.h" 
 #include "findfile.h"
 #include "file.hpp"
+//#pragma execution_character_set("utf-8") 
 using namespace std;
-_list *head;
-_file *h;
-bool l=0;
-void strre(char (&ch)[50], string &str2){
-	int i=0;
-	while(str2[i]!='\0'){
-		ch[i]=str2[i];
-		i++;
-	}
-	return;
-}
-void strre2(char (&ch)[50], string &str2){
-	for(int i=0;i<50;i++){
-		str2[i]=ch[i];
-	}
-	str2[49]='\0';
-	return;
-}
-void strclear(char (&ch)[50]){
-	for(int i=0;i<50;i++){
-		ch[i]='\0';
-	}
-	return;
-}
 int main (){
+	//SetConsoleOutputCP(CP_UTF8);
+	_file *f=NULL;
    char command[50];
    char filename[50][50];
    int a;
@@ -40,11 +20,10 @@ int main (){
 	strclear(command);
    	gets(command);
    	s=command;
-   	//strre2(command,s);
    	if(s=="help"){
-   		cout<<"help:exit/cmd/databox/findfile/filelist/file/file+"<<endl;
+   		cout<<"help:exit/cmd/databox/findfile/filelist/file"<<endl;
    		cout<<"controller is made by GZFLS Lazybones LZQ"<<endl;
-   		cout<<"Any commercial use without telling the author is illegal."<<endl;
+   		cout<<"Any copy or use without telling the author is illegal."<<endl;
    		continue;
 	   }
 	if(s=="exit"){
@@ -81,46 +60,53 @@ int main (){
 			}
 			cout<<endl;
 		}
-		cout<<"文件数目:"<<num<<endl;
+		cout<<"Number of files: "<<num<<endl;
 		continue;
 	}
 	if(s=="file"){
 		//string  path = "C:\\Users\\Student\\Desktop";
-		if(l==1){
-			cout<<"路径树已存在，是否覆盖？(Y/N)"<<endl;
-			string path;
-			cin>>path;
-			if(path!="Y") continue;
-			//清除树
-			delfileall(h);
+		if(f!=NULL){
+			char c;
+			cout<<"File-tree is existing, replace? (Y/N)"<<endl;
+			cin>>c;
+			if(c!='Y') continue;
+			delfileall(f);
+			f = NULL;
 		}
-		//创建树 
-		l = 1;
 		string path;
 		cout<<"input(path):"<<endl; 
 		cin>>path;
-		h = new _file;
-		h->father = NULL;
-		h->num = 0;
-		h->name = rename(path);
-		h->path = path;
-		head = new _list;
-		h->son = head;
-		head->addr = h;
-		head->front = NULL;
-		head->next = NULL;
 		vector<string> dirpath;
-		getfileall(path, dirpath,head,h); 
+		f = new _file;
+		initfile(f);
+		getfileall(path, dirpath, f, NULL);  
 		continue;
 	}
 	if(s=="file+"){
-		cout<<"input(objective):"<<endl;
-		string objective;
-		cin>>objective;
-		cout<<"inout(operation):"<<endl;
-		string operation;
-		cin>>operation;
-		searchfileall(h,objective,operation);
+		if(f==NULL){
+			cout<<"No file!"<<endl;
+			continue;
+		}
+		cout<<"tips: print/del/search"<<endl;
+		string str;
+		cin>>str;
+		if(str=="print"){
+			printfileall(f);
+		} 
+		if(str=="del"){
+			delfileall(f);
+			f = NULL; 
+		}
+		if(str=="search"){
+			string str1,str2;
+			cout<<"objective: "<<endl;
+			cout<<"tips: *.*"<<endl;
+			cin>>str1;
+			cout<<"operation: "<<endl;
+			cout<<"tips: list/type/del/print/lookfor"<<endl;
+			cin>>str2;
+			searchfileall(f,str1,str2);
+		}
 		continue;
 	}
 	//default
